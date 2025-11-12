@@ -1,9 +1,8 @@
 python-dotenv==1.0.1
 flask==3.0.0
 flask-cors==4.0.0
-langchain==0.1.17
-langchain-openai==0.1.6
-langchain-community==0.0.24
+langchain-google-genai==3.0.1
+langchain-core==1.0.4
 pypdf==4.0.1
 python-multipart==0.0.6
 requests==2.31.0
