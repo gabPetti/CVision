@@ -1,7 +1,6 @@
 def summarize_cv(cv_text: str, job_description: str, llm) -> str:
     """ Summarize CV in relation to a job description using LangChain LLM """
-    from langchain.prompts import PromptTemplate
-    from langchain.chains import LLMChain
+    from langchain_core.prompts import PromptTemplate
 
     prompt = PromptTemplate(
         input_variables=["cv_text", "job_description"],
@@ -12,6 +11,11 @@ def summarize_cv(cv_text: str, job_description: str, llm) -> str:
         )
     )
 
-    chain = LLMChain(llm=llm, prompt=prompt)
-    summary = chain.run(cv_text=cv_text, job_description=job_description)
-    return summary
+    # Use the pipe operator instead of LLMChain for newer LangChain versions
+    chain = prompt | llm
+    result = chain.invoke({"cv_text": cv_text, "job_description": job_description})
+    
+    # Extract text from response
+    if hasattr(result, 'content'):
+        return result.content
+    return str(result)

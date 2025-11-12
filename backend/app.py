@@ -9,7 +9,7 @@ from functions import summarize_cv
 
 # Load environment variables
 load_dotenv()
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 app = Flask(__name__)
 CORS(app)
@@ -22,11 +22,21 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-llm = ChatGoogleGenerativeAI(
-    temperature = 0,
-    model = "gemini-2.5-flash",
-    api_key = GOOGLE_API_KEY
-)
+# Lazy load LLM - only initialize when needed
+_llm = None
+
+def get_llm():
+    """Get or initialize the LLM instance"""
+    global _llm
+    if _llm is None:
+        if not GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
+        _llm = ChatGoogleGenerativeAI(
+            temperature=0,
+            model="gemini-2.5-flash",
+            api_key=GEMINI_API_KEY
+        )
+    return _llm
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -55,15 +65,17 @@ def get_summarize_cv():
         # Get query parameters
         cv_text = request.args.get('cv_text', '')
         job_description = request.args.get('job_description', '')
-        
+
         # Validate inputs
         if not cv_text or not cv_text.strip():
             return jsonify({'error': 'cv_text parameter is required'}), 400
         
         if not job_description or not job_description.strip():
             return jsonify({'error': 'job_description parameter is required'}), 400
-        
-        # Call summarize_cv function
+
+        # Get LLM instance
+        llm = get_llm()
+
         summary = summarize_cv(cv_text, job_description, llm)
         
         return jsonify({
@@ -71,6 +83,8 @@ def get_summarize_cv():
             'status': 'success'
         }), 200
     
+    except ValueError as e:
+        return jsonify({'error': f'Configuration error: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
