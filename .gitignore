@@ -72,3 +72,13 @@ pids
 # Coverage
 coverage
 .nyc_output
+
+# Python backend
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/dist/
+backend/build/
+backend/.pytest_cache/
+backend/.coverage
+*.egg-info/
