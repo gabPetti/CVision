@@ -2,11 +2,12 @@ import os
 import logging
 import tempfile
 from pathlib import Path
-from flask import Flask, request
+from flask import Flask, send_file, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 from lib import ResponseBuilder, LLMProvider
 from functions.analyze_cv import analyze_cv
+from functions.generate_cv import generate_cv
 from functions.dtos import RequestValidator
 from langchain_community.document_loaders import PyPDFLoader
 
@@ -50,8 +51,8 @@ CORS(app, resources={
 # ANALIZAR-CV ENDPOINT - Combina summarize_cv + analyze_cv
 # ============================================================================
 
-@app.post('/api/v1/analizar-cv')
-def analizar_cv():
+@app.post('/api/v1/analisar-cv')
+def analisar_cv():
     """
     Endpoint completo que:
     1. Extrai e resume o CV (summarize_cv)
@@ -116,6 +117,40 @@ def analizar_cv():
         logger.error(f"Erro em /api/v1/analizar-cv: {e}")
         return ResponseBuilder.error(
             f"Erro ao analisar CV: {str(e)}",
+            status_code=500
+        )
+
+@app.post('/api/v1/gerar_cv_otimizado')
+def gerar_cv_otimizado():
+    """
+    Gera um currículo otimizado baseado na análise.
+    """
+    file = request.files.get('file', None)
+    cv_analisys = request.form.get('cv_analisys', None)
+    
+    try:
+        temp_dir = tempfile.gettempdir()
+        temp_file_path = os.path.join(temp_dir, file.filename)
+        file.save(temp_file_path)
+        loader = PyPDFLoader(temp_file_path)
+        pages = loader.load()
+        llm_provider = LLMProvider()
+        llm = llm_provider.get_llm()
+
+        response = generate_cv(pages, cv_analisys, llm)
+
+        logger.info("CV analisado com sucesso")
+
+        return send_file(
+            response,
+            as_attachment=True,
+            download_name='cv_otimizado.pdf'
+        )
+    
+    except Exception as e:
+        logger.error(f"Erro ao gerar CV otimizado: {e}")
+        return ResponseBuilder.error(
+            f"Erro ao gerar CV otimizado: {str(e)}",
             status_code=500
         )
 
