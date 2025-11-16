@@ -1,20 +1,23 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FileUpload } from "@/components/FileUpload";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { CVPreview } from "@/components/CVPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cvApi } from "@/services/cv-api";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [jobUrl, setJobUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
+  const [analysis, setAnalysis] = useState<{ strengths: string[]; improvements: string[]; strategy: string } | null>(null);
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleAnalyze = async () => {
@@ -29,6 +32,7 @@ const Index = () => {
 
     setIsAnalyzing(true);
     setAnalysis(null);
+    setPdfBase64(null); // Start loading state
     
     try {
       // Chama a API do backend para analisar o CV
@@ -39,7 +43,28 @@ const Index = () => {
         strengths: result.pontos_fortes || [],
         improvements: result.pontos_melhoria || [],
         strategy: result.sugestao_estrategica || "",
-      };      setAnalysis(analysisData);
+      };
+      setAnalysis(analysisData);
+
+      // Gera o PDF otimizado automaticamente assim que a análise retorna
+      // Sem aguardar o final, para economizar tempo
+      cvApi.gerarCv(cvFile).then((pdfResult) => {
+        try {
+          const pdf = pdfResult.data?.pdf_base64 || pdfResult.pdf_base64;
+          if (pdf) {
+            setPdfBase64(pdf);
+            // Armazena o PDF no localStorage para ser acessado depois
+            localStorage.setItem("optimizedCvPdf", pdf);
+            localStorage.setItem("optimizedCvFileName", "curriculo-otimizado.pdf");
+          }
+        } catch (err) {
+          console.error("Erro ao processar PDF:", err);
+        }
+      }).catch((pdfError) => {
+        console.warn("Erro ao gerar PDF:", pdfError);
+        // Continua mesmo sem gerar o PDF
+      });
+
       toast({
         title: "Análise concluída!",
         description: "Seu currículo foi analisado com sucesso.",
@@ -53,56 +78,6 @@ const Index = () => {
       });
     } finally {
       setIsAnalyzing(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!analysis) {
-      toast({
-        title: "Erro",
-        description: "Análise não disponível.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Chama a API do backend para gerar o PDF otimizado
-      const result = await cvApi.gerarCv(cvFile!);
-      
-      if (!result.success) {
-        throw new Error(result.message || "Erro ao gerar PDF");
-      }
-
-      // Extrai o PDF em base64 do resultado
-      const pdfBase64 = result.data.pdf_base64 || result.data;
-      
-      // Cria um blob do PDF e faz download
-      const pdfBlob = new Blob(
-        [Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0))],
-        { type: 'application/pdf' }
-      );
-      
-      const url = window.URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'curriculo-otimizado.pdf';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Download iniciado!",
-        description: "Seu CV otimizado está sendo baixado.",
-      });
-    } catch (error) {
-      console.error("Erro no download:", error);
-      toast({
-        title: "Erro no download",
-        description: error instanceof Error ? error.message : "Não foi possível baixar o CV.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -122,6 +97,19 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-12 relative z-10">
+        {/* Home Button */}
+        <div className="mb-8 animate-in fade-in-0 slide-in-from-left-4 duration-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="gap-2 hover:bg-primary/10"
+          >
+            <Home className="w-4 h-4" />
+            Voltar para Home
+          </Button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-16 animate-in fade-in-0 slide-in-from-top-4 duration-700">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 backdrop-blur-glass border border-primary/20 mb-6">
@@ -191,14 +179,10 @@ const Index = () => {
           {/* Results Section */}
           {analysis && (
             <>
-              <AnalysisResults analysis={analysis} />
-              
-              {analysis.optimizedCvHtml && (
-                <CVPreview 
-                  htmlContent={analysis.optimizedCvHtml} 
-                  onDownload={handleDownload}
-                />
-              )}
+              <AnalysisResults 
+                analysis={analysis} 
+                pdfBase64={pdfBase64}
+              />
             </>
           )}
         </div>

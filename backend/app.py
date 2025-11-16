@@ -1,6 +1,7 @@
 import os
 import logging
 import tempfile
+import base64
 from pathlib import Path
 from flask import Flask, send_file, request
 from flask_cors import CORS
@@ -141,10 +142,16 @@ def gerar_cv_otimizado():
 
         logger.info("CV analisado com sucesso")
 
-        return send_file(
-            response,
-            as_attachment=True,
-            download_name='cv_otimizado.pdf'
+        # Convert the PDF file to base64
+        with open(response, 'rb') as pdf_file:
+            pdf_base64 = base64.b64encode(pdf_file.read()).decode('utf-8')
+        
+        # Return JSON with base64 encoded PDF
+        return ResponseBuilder.success(
+            data={
+                "pdf_base64": pdf_base64,
+                "filename": "cv_otimizado.pdf"
+            }
         )
     
     except Exception as e:
