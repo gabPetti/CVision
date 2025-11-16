@@ -4,16 +4,20 @@ Análise de aderência entre CV e vaga.
 """
 
 import logging
+import base64
+from werkzeug.datastructures import FileStorage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import JsonOutputParser
 
 logger = logging.getLogger(__name__)
 
-def analyze_cv(cv_file: str, link_vaga: str, llm: ChatGoogleGenerativeAI) -> str:
+def analyze_cv(pages, link_vaga: str, llm: ChatGoogleGenerativeAI) -> dict:
     prompt_analise = ChatPromptTemplate.from_template("""
     Você é um 'Consultor de Carreira'.
-    Faça uma análise de aderência (Gap Analysis) em Markdown comparando o CV do candidato com os dados encontrados da vaga.
+    
+    Por favor, analise este currículo e faça uma análise de aderência (Gap Analysis) 
+    comparando-o com os dados encontrados da vaga.
 
     Seja tático e gere um relatório com:
     - **Pontos Fortes**: Onde o CV atende aos requisitos.
@@ -30,8 +34,8 @@ def analyze_cv(cv_file: str, link_vaga: str, llm: ChatGoogleGenerativeAI) -> str
     **Link da Vaga (JSON):**
     {link_vaga}
 
-    **Currículo (CV) do Candidato:**
-    {cv}
+    **Arquivo do Currículo:**
+    {cv_file}
     """)
 
     parser_json = JsonOutputParser()
@@ -39,7 +43,7 @@ def analyze_cv(cv_file: str, link_vaga: str, llm: ChatGoogleGenerativeAI) -> str
 
     resultado = chain_analise.invoke({
         "link_vaga": link_vaga,
-        "cv": cv_file
+        "cv_file": pages,
     })
 
     return resultado

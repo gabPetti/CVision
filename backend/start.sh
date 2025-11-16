@@ -49,9 +49,9 @@ python3 -c "
 import sys
 try:
     import flask
-    import langchain
     import langchain_core
     import langchain_google_genai
+    import langchain_community
     import PyPDF2
     import docx
     print('  ✓ Todas as dependências importadas com sucesso')

@@ -1,16 +1,14 @@
 import os
 import logging
+import tempfile
 from pathlib import Path
-from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_cors import CORS
 from dotenv import load_dotenv
-from typing import Optional, Dict, Any
 from lib import ResponseBuilder, LLMProvider
 from functions.analyze_cv import analyze_cv
-from functions.summarize_cv import summarize_cv
-from functions.dtos import AnalizarCvRequest, AnalizarCvResponse, RequestValidator
-from langchain_core.output_parsers import StrOutputParser
+from functions.dtos import RequestValidator
+from langchain_community.document_loaders import PyPDFLoader
 
 load_dotenv()
 
@@ -79,22 +77,28 @@ def analizar_cv():
             return error_response
         
         # ====================================================================
-        # ETAPA 2: Resumir e analizar CV
+        # ETAPA 2: Analisar CV
         # ====================================================================
         
         cv_summary = None
         try:
+            temp_dir = tempfile.gettempdir()
+            temp_file_path = os.path.join(temp_dir, file.filename)
+            file.save(temp_file_path)
+            loader = PyPDFLoader(temp_file_path)
+            pages = loader.load()
+
             logger.info("Etapa 1: Resumindo CV...")
             llm_provider = LLMProvider()
             llm = llm_provider.get_llm()
 
             # cv_summary = summarize_cv(request_dto.file, llm)
 
-            analysis_result = analyze_cv(cv_summary, request_dto.job_link, llm)
+            analysis_result = analyze_cv(pages, request_dto.job_link, llm)
 
             logger.info("CV analisado com sucesso")
         except Exception as e:
-            logger.error(f"Erro ao analisado CV: {e}")
+            logger.error(f"Erro ao analisar CV: {e}")
             return ResponseBuilder.error(
                 f"Erro ao analisar CV: {str(e)}",
                 status_code=500
