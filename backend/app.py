@@ -1,93 +1,166 @@
 import os
+import logging
+from pathlib import Path
+from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-import tempfile
-from pathlib import Path
-from langchain_google_genai import ChatGoogleGenerativeAI
-from functions import summarize_cv
+from functions.analyze_cv import create_analyzer
+from functions.generate_cv_pdf import generate_pdf_from_html
+from functions.summarize_cv import summarize_cv
+from functions.dtos import AnalizarCvRequest, AnalizarCvResponse, RequestValidator
+from langchain_core.output_parsers import StrOutputParser
 
-# Load environment variables
 load_dotenv()
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Create Flask app
 app = Flask(__name__)
-CORS(app)
 
 # Configuration
-UPLOAD_FOLDER = tempfile.gettempdir()
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+UPLOAD_FOLDER = Path(os.getenv('UPLOAD_FOLDER', './uploads'))
+UPLOAD_FOLDER.mkdir(exist_ok=True)
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt'}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+app.config['JSON_SORT_KEYS'] = False
 
-# Lazy load LLM - only initialize when needed
-_llm = None
+# Enable CORS
+CORS(app, resources={
+    r"/functions/*": {
+        "origins": ["http://localhost:8080", "http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/api/*": {
+        "origins": ["http://localhost:8080", "http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
-def get_llm():
-    """Get or initialize the LLM instance"""
-    global _llm
-    if _llm is None:
-        if not GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
-        _llm = ChatGoogleGenerativeAI(
-            temperature=0,
-            model="gemini-2.5-flash",
-            api_key=GEMINI_API_KEY
-        )
-    return _llm
+# ============================================================================
+# ANALIZAR-CV ENDPOINT - Combina summarize_cv + analyze_cv
+# ============================================================================
 
-def allowed_file(filename):
-    """Check if file extension is allowed"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-@app.route('/health', methods=['GET'])
-def health():
-    """Health check endpoint"""
-    return jsonify({'status': 'ok'}), 200
-
-
-@app.route('/api/summarize-cv', methods=['GET'])
-def get_summarize_cv():
+@app.post('/api/v1/analizar-cv')
+def analizar_cv():
     """
-    Summarize CV in relation to a job description
+    Endpoint completo que:
+    1. Extrai e resume o CV (summarize_cv)
+    2. Analisa com 3 cadeias LCEL (analyze_cv)
     
-    Expected query parameters:
-    - cv_text: The CV content text
-    - job_description: The job description
-    
-    Returns:
-    - summary: Summarized matching between CV and job description
+    Retorna: resumo + análise completa + HTML otimizado
     """
     try:
-        # Get query parameters
-        cv_text = request.args.get('cv_text', '')
-        job_description = request.args.get('job_description', '')
-
-        # Validate inputs
-        if not cv_text or not cv_text.strip():
-            return jsonify({'error': 'cv_text parameter is required'}), 400
+        # ====================================================================
+        # ETAPA 1: Validação do DTO
+        # ====================================================================
         
-        if not job_description or not job_description.strip():
-            return jsonify({'error': 'job_description parameter is required'}), 400
-
-        # Get LLM instance
-        llm = get_llm()
-
-        summary = summarize_cv(cv_text, job_description, llm)
+        file = request.files.get('file', None)
+        job_description = request.form.get('job_description', None)
         
-        return jsonify({
-            'summary': summary,
-            'status': 'success'
-        }), 200
+        # Valida request com DTO
+        request_dto, error_response = RequestValidator.validate_analizar_cv_request(
+            file=file,
+            cv_text=cv_text,
+            job_description=job_description
+        )
+        
+        if error_response:
+            return error_response
+        
+        # ====================================================================
+        # ETAPA 2: Extração de texto do CV
+        # ====================================================================
+        
+        try:
+            cv_text = request_dto.get_cv_text()
+            if not cv_text:
+                return ResponseBuilder.error(
+                    "CV vazio após processamento",
+                    status_code=400
+                )
+        except Exception as e:
+            logger.error(f"Erro ao extrair texto: {e}")
+            return ResponseBuilder.error(
+                f"Erro ao processar arquivo: {str(e)}",
+                status_code=400
+            )
+        
+        # ====================================================================
+        # ETAPA 3: Resumir CV
+        # ====================================================================
+        
+        cv_summary = None
+        try:
+            logger.info("Etapa 1: Resumindo CV...")
+            llm_provider = LLMProvider()
+            llm = llm_provider.get_llm()
+            parser = StrOutputParser()
+            
+            cv_summary = summarize_cv(cv_text, llm, parser)
+            logger.info("CV resumido com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao resumir CV: {e}")
+            cv_summary = None  # Continue mesmo com erro no resumo
+        
+        # ====================================================================
+        # ETAPA 4: Analisar CV com 3 cadeias LCEL
+        # ====================================================================
+        
+        try:
+            logger.info("Etapa 2: Analisando CV com 3 cadeias LCEL...")
+            analyzer = create_analyzer()
+            analysis_result = analyzer.analyze(cv_text, request_dto.job_description)
+            
+            if not analysis_result.get('success'):
+                return ResponseBuilder.error(
+                    analysis_result.get('error', 'Erro ao analisar CV'),
+                    status_code=500
+                )
+            
+            logger.info("Análise completa com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao analisar CV: {e}")
+            return ResponseBuilder.error(
+                f"Erro ao analisar CV: {str(e)}",
+                status_code=500
+            )
+        
+        # ====================================================================
+        # ETAPA 5: Consolidar resposta com DTO
+        # ====================================================================
+        
+        response_dto = AnalizarCvResponse(
+            summary=cv_summary,
+            analysis=analysis_result.get('analysis'),
+            metadata=analysis_result.get('metadata')
+        )
+        
+        return ResponseBuilder.success(
+            data=response_dto.to_dict()['data'],
+            message="CV analisado com sucesso (resumo + análise completa)"
+        )
     
-    except ValueError as e:
-        return jsonify({'error': f'Configuration error: {str(e)}'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Erro em /api/v1/analizar-cv: {e}")
+        return ResponseBuilder.error(
+            f"Erro ao analisar CV: {str(e)}",
+            status_code=500
+        )
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.getenv('PORT', 5000))
+    app.logger.info(f"🚀 Iniciando CVision Backend na porta {port}")
+
+    app.run(port=port, debug=True)

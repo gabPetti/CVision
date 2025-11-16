@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "vite",
-    "dev:backend": "supabase functions serve",
+    "dev:backend": "cd backend && bash start.sh",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
