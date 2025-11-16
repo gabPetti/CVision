@@ -16,10 +16,9 @@ logger = logging.getLogger(__name__)
 class AnalizarCvRequest:
     """DTO para requisição de análise de CV"""
     
-    def __init__(self, file: Optional[FileStorage] = None, cv_text: Optional[str] = None, job_description: Optional[str] = None):
+    def __init__(self, file: Optional[FileStorage] = None, job_link: Optional[str] = None):
         self.file = file
-        self.cv_text = cv_text
-        self.job_description = job_description
+        self.job_link = job_link
     
     def validate(self) -> Tuple[bool, Optional[str]]:
         """
@@ -28,48 +27,30 @@ class AnalizarCvRequest:
         Returns:
             Tuple[bool, Optional[str]]: (é_válido, mensagem_erro)
         """
-        # Verifica se tem arquivo ou texto
-        if not self.file and not self.cv_text:
-            return False, "Arquivo ou texto do CV é obrigatório"
         
-        # Valida arquivo se enviado
-        if self.file:
-            # Verifica nome do arquivo
-            if not self.file.filename or self.file.filename == '':
-                return False, "Nenhum arquivo selecionado"
-            
-            # Verifica formato do arquivo
-            if not CVTextExtractor.is_valid_file(self.file.filename):
-                return False, f"Formato não suportado. Use: {', '.join(CVTextExtractor.SUPPORTED_FORMATS)}"
-            
-            logger.info(f"Arquivo validado: {self.file.filename}")
+        # Verifica se arquivo foi enviado
+        if not self.file:
+            return False, "Arquivo do CV é obrigatório"
         
-        # Valida texto se enviado
-        if self.cv_text:
-            cv_text = self.cv_text.strip()
-            if not cv_text:
-                return False, "Texto do CV não pode estar vazio"
-            self.cv_text = cv_text
-            logger.info(f"Texto do CV validado: {len(cv_text)} caracteres")
+        # Verifica nome do arquivo
+        if not self.file.filename or self.file.filename == '':
+            return False, "Nenhum arquivo selecionado"
+        
+        # Verifica formato do arquivo
+        if not CVTextExtractor.is_valid_file(self.file.filename):
+            return False, f"Formato não suportado. Use: {', '.join(CVTextExtractor.SUPPORTED_FORMATS)}"
+        
+        logger.info(f"Arquivo validado: {self.file.filename}")
+        
+        # Verifica job_link se enviado
+        if self.job_link:
+            job_link = self.job_link.strip()
+            if not job_link:
+                return False, "Job link não pode estar vazio"
+            self.job_link = job_link
+            logger.info(f"Job link validado: {job_link}")
         
         return True, None
-    
-    def get_cv_text(self) -> Optional[str]:
-        """Extrai texto do CV (arquivo ou texto direto)"""
-        try:
-            if self.file:
-                logger.info(f"Extraindo texto do arquivo: {self.file.filename}")
-                file_content = self.file.read()
-                cv_text = CVTextExtractor.extract_text(self.file.filename, file_content)
-                logger.info(f"Texto extraído: {len(cv_text)} caracteres")
-                return cv_text
-            elif self.cv_text:
-                return self.cv_text
-        except Exception as e:
-            logger.error(f"Erro ao extrair texto: {e}")
-            raise
-        
-        return None
 
 
 class AnalizarCvResponse:
@@ -100,7 +81,7 @@ class RequestValidator:
     """Validador centralizado para requisições"""
     
     @staticmethod
-    def validate_analizar_cv_request(file: Optional[FileStorage], cv_text: Optional[str], job_description: Optional[str]) -> Tuple[Optional[AnalizarCvRequest], Optional[Tuple[Dict, int]]]:
+    def validate_analizar_cv_request(file: Optional[FileStorage], job_link: Optional[str]) -> Tuple[Optional[AnalizarCvRequest], Optional[Tuple[Dict, int]]]:
         """
         Valida requisição de análise de CV
         
@@ -110,7 +91,7 @@ class RequestValidator:
             - Se inválido: (None, (error_response, status_code))
         """
         # Cria DTO
-        request_dto = AnalizarCvRequest(file=file, cv_text=cv_text, job_description=job_description)
+        request_dto = AnalizarCvRequest(file=file, job_link=job_link)
         
         # Valida
         is_valid, error_message = request_dto.validate()

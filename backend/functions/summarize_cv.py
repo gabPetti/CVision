@@ -10,7 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 logger = logging.getLogger(__name__)
 
-def summarize_cv(pages: str, llm: ChatGoogleGenerativeAI, parser_str: StrOutputParser) -> str:
+def summarize_cv(pages: str, llm: ChatGoogleGenerativeAI) -> str:
     """
     Sumariza e organiza as informações do currículo.
     
@@ -36,7 +36,7 @@ def summarize_cv(pages: str, llm: ChatGoogleGenerativeAI, parser_str: StrOutputP
 
     Currículo: {cv}
     """)
-
+    parser_str = StrOutputParser()
     chain_sumarizacao = prompt_sumarizacao | llm | parser_str
 
     cv_resumido = chain_sumarizacao.invoke({

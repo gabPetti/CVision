@@ -5,8 +5,9 @@ from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from functions.analyze_cv import create_analyzer
-from functions.generate_cv_pdf import generate_pdf_from_html
+from typing import Optional, Dict, Any
+from lib import ResponseBuilder, LLMProvider
+from functions.analyze_cv import analyze_cv
 from functions.summarize_cv import summarize_cv
 from functions.dtos import AnalizarCvRequest, AnalizarCvResponse, RequestValidator
 from langchain_core.output_parsers import StrOutputParser
@@ -66,38 +67,19 @@ def analizar_cv():
         # ====================================================================
         
         file = request.files.get('file', None)
-        job_description = request.form.get('job_description', None)
+        job_link = request.form.get('job_link', None)
         
         # Valida request com DTO
         request_dto, error_response = RequestValidator.validate_analizar_cv_request(
             file=file,
-            cv_text=cv_text,
-            job_description=job_description
+            job_link=job_link
         )
         
         if error_response:
             return error_response
         
         # ====================================================================
-        # ETAPA 2: Extração de texto do CV
-        # ====================================================================
-        
-        try:
-            cv_text = request_dto.get_cv_text()
-            if not cv_text:
-                return ResponseBuilder.error(
-                    "CV vazio após processamento",
-                    status_code=400
-                )
-        except Exception as e:
-            logger.error(f"Erro ao extrair texto: {e}")
-            return ResponseBuilder.error(
-                f"Erro ao processar arquivo: {str(e)}",
-                status_code=400
-            )
-        
-        # ====================================================================
-        # ETAPA 3: Resumir CV
+        # ETAPA 2: Resumir e analizar CV
         # ====================================================================
         
         cv_summary = None
@@ -105,50 +87,25 @@ def analizar_cv():
             logger.info("Etapa 1: Resumindo CV...")
             llm_provider = LLMProvider()
             llm = llm_provider.get_llm()
-            parser = StrOutputParser()
-            
-            cv_summary = summarize_cv(cv_text, llm, parser)
-            logger.info("CV resumido com sucesso")
+
+            # cv_summary = summarize_cv(request_dto.file, llm)
+
+            analysis_result = analyze_cv(cv_summary, request_dto.job_link, llm)
+
+            logger.info("CV analisado com sucesso")
         except Exception as e:
-            logger.error(f"Erro ao resumir CV: {e}")
-            cv_summary = None  # Continue mesmo com erro no resumo
-        
-        # ====================================================================
-        # ETAPA 4: Analisar CV com 3 cadeias LCEL
-        # ====================================================================
-        
-        try:
-            logger.info("Etapa 2: Analisando CV com 3 cadeias LCEL...")
-            analyzer = create_analyzer()
-            analysis_result = analyzer.analyze(cv_text, request_dto.job_description)
-            
-            if not analysis_result.get('success'):
-                return ResponseBuilder.error(
-                    analysis_result.get('error', 'Erro ao analisar CV'),
-                    status_code=500
-                )
-            
-            logger.info("Análise completa com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao analisar CV: {e}")
+            logger.error(f"Erro ao analisado CV: {e}")
             return ResponseBuilder.error(
                 f"Erro ao analisar CV: {str(e)}",
                 status_code=500
             )
-        
+
         # ====================================================================
         # ETAPA 5: Consolidar resposta com DTO
         # ====================================================================
         
-        response_dto = AnalizarCvResponse(
-            summary=cv_summary,
-            analysis=analysis_result.get('analysis'),
-            metadata=analysis_result.get('metadata')
-        )
-        
         return ResponseBuilder.success(
-            data=response_dto.to_dict()['data'],
-            message="CV analisado com sucesso (resumo + análise completa)"
+            data=analysis_result,
         )
     
     except Exception as e:
