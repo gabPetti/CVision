@@ -14,7 +14,7 @@ const Index = () => {
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [jobUrl, setJobUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState(null);
   const { toast } = useToast();
 
   const handleAnalyze = async () => {
@@ -57,7 +57,7 @@ const Index = () => {
       reader.onerror = () => {
         throw new Error("Erro ao ler o arquivo PDF");
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro na análise:", error);
       toast({
         title: "Erro na análise",
@@ -108,7 +108,7 @@ const Index = () => {
         title: "Download iniciado!",
         description: "Seu CV otimizado está sendo baixado.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro no download:", error);
       toast({
         title: "Erro no download",
