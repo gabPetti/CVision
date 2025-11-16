@@ -1,58 +1,73 @@
-# CVision
+# Welcome to your Lovable project
 
-## 🚀 Visão Geral
+## Project info
 
-O CVision é uma ferramenta de PLN que atua como um consultor de RH digital. Em vez de uma análise de currículo genérica, este projeto foca em resolver um problema do mundo real que toda pessoa que já entrou no mercado de trabalho já se perguntou: "Meu currículo está bom para esta vaga?"
+**URL**: https://lovable.dev/projects/23e1beca-fca3-497a-9821-dd24e8a09e0d
 
-O usuário fornece dois inputs de texto:
+## How can I edit this code?
 
-- O texto completo do seu Currículo (CV).
-- O texto completo da Descrição da Vaga (ex: copiado do LinkedIn, Vagas.com).
+There are several ways of editing your application.
 
-A ferramenta, então, gera uma análise de aderência (Gap Analysis) tática, informando os pontos fortes, as lacunas (o que falta) e sugestões estratégicas para o candidato se destacar.
+**Use Lovable**
 
-## ✨ Features
+Simply visit the [Lovable Project](https://lovable.dev/projects/23e1beca-fca3-497a-9821-dd24e8a09e0d) and start prompting.
 
-- **Gap Analysis**: Compara o CV do usuário com os requisitos da vaga.
-- **Extração de Requisitos**: Identifica e extrai automaticamente as hard skills e soft skills mais importantes da descrição da vaga.
-- **Relatório Tático**: Gera um relatório simples em markdown com:
-  - Pontos Fortes: Onde o seu CV brilha para esta vaga.
-  - Pontos de Melhoria: Quais requisitos da vaga não estão claros no seu CV.
-  - Sugestão Estratégica: Uma dica de ouro para destacar na sua carta de apresentação ou entrevista.
+Changes made via Lovable will be committed automatically to this repo.
 
-## 🛠️ Arquitetura e Uso Criativo do LangChain
+**Use your preferred IDE**
 
-Aqui está o núcleo do projeto, utilizando o LangChain e múltiplas técnicas de PLN para alcançar as features descritas acima.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-Em vez de um prompt único, o projeto usa a LCEL (LangChain Expression Language) para orquestrar um pipeline de duas etapas que simula o raciocínio de um recrutador. A pipeline consiste na utilização das tecnicas de Extração de Entidades encadeado de Sumarização Comparativa.
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Cadeia 1: Extração de Requisitos
+Follow these steps:
 
-- Input: O `texto_vaga`.
-- Processo: O texto passa por um `PromptTemplate` que instrui o LLM a atuar como um "Tech Recruiter".
-- Técnica: O LLM (Gemini) extrai as skills essenciais.
-- Output: Um `JsonOutputParser` força o LLM a retornar um JSON estruturado com as `hard_skills` e `soft_skills`.
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-Cadeia 2: Análise de Aderência
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
 
-- Input: O texto_cv do usuário + o JSON gerado pela Cadeia 1.
-- Processo: Um PromptTemplate instrui o LLM a atuar como "Consultor de Carreira".
-- Técnica: O LLM (Gemini) recebe ambos os inputs e deve comparar os dois, gerando a análise de aderência (gap analysis).
-- Output: Um `StrOutputParser` retorna o relatório final em texto (Markdown).
+# Step 3: Install the necessary dependencies.
+npm i
 
-O RunnablePassthrough do LangChain é usado para gerenciar e rotear esses múltiplos inputs (CV, Vaga) através do pipeline de forma eficiente.
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
 
-## ✅ Atendimento aos Critérios de Avaliação
+**Edit a file directly in GitHub**
 
-- Uso do LangChain: Uso da LCEL para orquestrar um pipeline sequencial, gerenciar múltiplos inputs e usar parsers.
-- Uso de um LLM: Uso do Gemini 2.5 Flash para ambas as etapas de PLN.
-- Uso de Página Web (Corpus): O corpus é o texto de uma vaga de emprego real (ex: LinkedIn, Vagas.com), um dado não-estruturado do "mundo real" que o usuário fornece.
-- Github: O projeto está disponível [link-para-seu-github-aqui].
-- Criatividade: A criatividade reside na arquitetura de duas etapas, que simula o raciocínio de um recrutador (primeiro entende a vaga, depois analisa o CV), ao invés de usar um prompt único e simplista. Este projeto exala criatividade e inovação
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-## 🔧 Tecnologias Utilizadas
+**Use GitHub Codespaces**
 
-- Linguagem: Python
-- Plataforma: Google Colab
-- Framework: LangChain (LCEL, langchain-google-genai, langchain-core)
-- LLM: Google Gemini 2.5 Flash
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/23e1beca-fca3-497a-9821-dd24e8a09e0d) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

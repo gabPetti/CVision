@@ -1,1 +1,7 @@
-project_id = "hnqxwxobnmahcwvrbatu"
+project_id = "vwrvzzyipvlsaadigxxe"
+
+[functions.analyze-cv]
+verify_jwt = false
+
+[functions.generate-cv-pdf]
+verify_jwt = false
