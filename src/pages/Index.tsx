@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { cvApi } from "@/services/cv-api";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
@@ -29,39 +29,26 @@ const Index = () => {
 
     setIsAnalyzing(true);
     setAnalysis(null);
-
+    
     try {
-      // Convert PDF to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(cvFile);
-      
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        
-        const { data, error } = await supabase.functions.invoke("analyze-cv", {
-          body: {
-            cvBase64: base64,
-            jobUrl: jobUrl,
-          },
-        });
+      // Chama a API do backend para analisar o CV
+      const result = await cvApi.analisarCv(cvFile, jobUrl);
 
-        if (error) throw error;
-
-        setAnalysis(data);
-        toast({
-          title: "Análise concluída!",
-          description: "Seu currículo foi analisado com sucesso.",
-        });
-      };
-
-      reader.onerror = () => {
-        throw new Error("Erro ao ler o arquivo PDF");
-      };
+      // Estrutura os dados para compatibilidade com AnalysisResults
+      const analysisData = {
+        strengths: result.pontos_fortes || [],
+        improvements: result.pontos_melhoria || [],
+        strategy: result.sugestao_estrategica || "",
+      };      setAnalysis(analysisData);
+      toast({
+        title: "Análise concluída!",
+        description: "Seu currículo foi analisado com sucesso.",
+      });
     } catch (error) {
       console.error("Erro na análise:", error);
       toast({
         title: "Erro na análise",
-        description: error.message || "Ocorreu um erro ao analisar seu currículo.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao analisar seu currículo.",
         variant: "destructive",
       });
     } finally {
@@ -70,28 +57,29 @@ const Index = () => {
   };
 
   const handleDownload = async () => {
-    if (!analysis?.optimizedCvHtml) {
+    if (!analysis) {
       toast({
         title: "Erro",
-        description: "CV otimizado não disponível.",
+        description: "Análise não disponível.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Converte HTML para PDF no backend
-      const { data, error } = await supabase.functions.invoke("generate-cv-pdf", {
-        body: {
-          htmlContent: analysis.optimizedCvHtml,
-        },
-      });
+      // Chama a API do backend para gerar o PDF otimizado
+      const result = await cvApi.gerarCv(cvFile!);
+      
+      if (!result.success) {
+        throw new Error(result.message || "Erro ao gerar PDF");
+      }
 
-      if (error) throw error;
-
+      // Extrai o PDF em base64 do resultado
+      const pdfBase64 = result.data.pdf_base64 || result.data;
+      
       // Cria um blob do PDF e faz download
       const pdfBlob = new Blob(
-        [Uint8Array.from(atob(data.pdfBase64), c => c.charCodeAt(0))],
+        [Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0))],
         { type: 'application/pdf' }
       );
       
@@ -112,7 +100,7 @@ const Index = () => {
       console.error("Erro no download:", error);
       toast({
         title: "Erro no download",
-        description: error.message || "Não foi possível baixar o CV.",
+        description: error instanceof Error ? error.message : "Não foi possível baixar o CV.",
         variant: "destructive",
       });
     }

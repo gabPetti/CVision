@@ -1,28 +1,50 @@
 /**
  * API client for frontend to communicate with backend
  */
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export const cvApi = {
   /**
-   * Analizar CV - Complete analysis combining summarize + 3-chain analysis
-   * Returns: CV summary + skills analysis + gaps analysis + optimized HTML
+   * Analisar CV - Complete analysis combining file processing + gap analysis
+   * Returns: CV analysis with strengths, gaps, and strategic suggestions
    */
-  analizarCv: async (file: File, jobDescription?: string) => {
+  analisarCv: async (file: File, jobLink?: string) => {
     const formData = new FormData();
     formData.append("file", file);
-    if (jobDescription) {
-      formData.append("job_description", jobDescription);
+    if (jobLink) {
+      formData.append("job_link", jobLink);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/analizar-cv`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/analisar-cv`, {
+      method: "POST",
+      body: formData,
+    });
+
+    console.log("Response from analisarCv:", response);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Falha ao analisar CV");
+    }
+
+    return response.json();
+  },
+
+  gerarCv: async (file: File, analisys?: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (analisys) {
+      formData.append("cv_analisys", analisys);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/gerar_cv_otimizado`, {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to analyze CV");
+      throw new Error(error.message || "Falha ao analisar CV");
     }
 
     return response.json();

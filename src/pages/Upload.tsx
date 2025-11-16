@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { StepIndicator } from "@/components/StepIndicator";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { cvApi } from "@/services/cv-api";
 
 const steps = [
   { number: 1, label: "Upload do CV" },
@@ -57,12 +58,29 @@ const Upload = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate analysis - in real implementation, this would upload to backend
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Store file reference and navigate to jobs page
-    sessionStorage.setItem("cvFile", file.name);
-    navigate("/jobs");
+    try {
+      // Chama a API do backend para analisar o CV
+      const result = await cvApi.analisarCv(file);
+      
+      // Armazena resultado na sessão
+      sessionStorage.setItem("analysisResult", JSON.stringify(result));
+      sessionStorage.setItem("cvFile", file.name);
+      
+      toast({
+        title: "Análise concluída!",
+        description: "Seu CV foi analisado com sucesso",
+      });
+      
+      navigate("/analysis");
+    } catch (error) {
+      toast({
+        title: "Erro na análise",
+        description: error instanceof Error ? error.message : "Falha ao analisar o CV",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (

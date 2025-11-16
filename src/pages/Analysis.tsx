@@ -17,63 +17,74 @@ interface Tip {
   description: string;
 }
 
+interface AnalysisData {
+  pontos_fortes?: string[];
+  pontos_melhoria?: string[];
+  sugestao_estrategica?: string;
+}
+
 const Analysis = () => {
   const [tips, setTips] = useState<Tip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [strategicSuggestion, setStrategicSuggestion] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check if previous steps were completed
     const cvFile = sessionStorage.getItem("cvFile");
-    const jobId = sessionStorage.getItem("selectedJobId");
+    const analysisResultStr = sessionStorage.getItem("analysisResult");
     
-    if (!cvFile || !jobId) {
+    if (!cvFile || !analysisResultStr) {
       navigate("/upload");
       return;
     }
 
-    // Simulate analysis - in real implementation, this would call backend
-    const analyzeCV = async () => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock analysis data
-      setTips([
-        {
-          type: "strength",
-          title: "Experiência técnica relevante",
-          description: "Seu currículo demonstra forte experiência com React e TypeScript, competências-chave para esta vaga.",
-        },
-        {
-          type: "strength",
-          title: "Projetos práticos bem documentados",
-          description: "A inclusão de links para projetos no GitHub mostra suas habilidades de forma tangível.",
-        },
-        {
-          type: "improvement",
-          title: "Adicione métricas de impacto",
-          description: "Inclua números concretos sobre o impacto do seu trabalho, como 'Aumentei a performance em 40%' ou 'Reduzi bugs em 60%'.",
-        },
-        {
-          type: "improvement",
-          title: "Atualize certificações",
-          description: "Considere adicionar certificações recentes em tecnologias cloud (AWS, Azure) mencionadas na descrição da vaga.",
-        },
-        {
-          type: "suggestion",
-          title: "Destaque experiência com metodologias ágeis",
-          description: "A vaga menciona Scrum/Kanban. Dê mais destaque à sua experiência com essas metodologias.",
-        },
-        {
-          type: "suggestion",
-          title: "Inclua soft skills relevantes",
-          description: "Adicione exemplos de liderança técnica e mentorias, valorizados para posições senior.",
-        },
-      ]);
-      
-      setIsLoading(false);
+    // Parse analysis data from backend
+    const parseAnalysisData = async () => {
+      try {
+        const analysisResponse = JSON.parse(analysisResultStr);
+        
+        // Backend retorna: { success: true, data: {...}, message: "...", status: 200 }
+        const data: AnalysisData = analysisResponse.data || analysisResponse;
+        
+        const parsedTips: Tip[] = [];
+        
+        // Add strengths
+        if (Array.isArray(data.pontos_fortes)) {
+          data.pontos_fortes.forEach((strength: string) => {
+            parsedTips.push({
+              type: "strength",
+              title: "Ponto forte",
+              description: strength,
+            });
+          });
+        }
+        
+        // Add improvements
+        if (Array.isArray(data.pontos_melhoria)) {
+          data.pontos_melhoria.forEach((improvement: string) => {
+            parsedTips.push({
+              type: "improvement",
+              title: "Ponto de melhoria",
+              description: improvement,
+            });
+          });
+        }
+        
+        // Add strategic suggestion
+        if (data.sugestao_estrategica) {
+          setStrategicSuggestion(data.sugestao_estrategica);
+        }
+        
+        setTips(parsedTips);
+      } catch (error) {
+        console.error("Erro ao processar análise:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    analyzeCV();
+    parseAnalysisData();
   }, [navigate]);
 
   const getIcon = (type: Tip["type"]) => {
@@ -156,6 +167,20 @@ const Analysis = () => {
                 </div>
               ))}
             </div>
+
+            {strategicSuggestion && (
+              <div className="bg-gradient-to-r from-accent/10 to-accent/5 rounded-2xl p-8 border border-accent/20 mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 mt-1">
+                    <AlertCircle className="w-6 h-6 text-accent" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-3 text-accent-foreground">Sugestão Estratégica</h3>
+                    <p className="text-muted-foreground leading-relaxed">{strategicSuggestion}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-card rounded-2xl p-8 border border-border shadow-card text-center">
               <h3 className="text-xl font-semibold mb-3">Pronto para aplicar!</h3>
