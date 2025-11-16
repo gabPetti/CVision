@@ -3,6 +3,14 @@
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+// Use relative path for development (proxied through Vite)
+const getApiUrl = (path: string) => {
+  if (import.meta.env.DEV) {
+    return path; // Use proxied path during development
+  }
+  return `${API_BASE_URL}${path}`;
+};
+
 export const cvApi = {
   /**
    * Analisar CV - Complete analysis combining file processing + gap analysis
@@ -15,7 +23,7 @@ export const cvApi = {
       formData.append("job_link", jobLink);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/analisar-cv`, {
+    const response = await fetch(getApiUrl("/api/v1/analisar-cv"), {
       method: "POST",
       body: formData,
     });
@@ -37,7 +45,7 @@ export const cvApi = {
       formData.append("cv_analisys", analisys);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/gerar_cv_otimizado`, {
+    const response = await fetch(getApiUrl("/api/v1/gerar_cv_otimizado"), {
       method: "POST",
       body: formData,
     });

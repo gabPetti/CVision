@@ -36,15 +36,11 @@ app.config['JSON_SORT_KEYS'] = False
 
 # Enable CORS
 CORS(app, resources={
-    r"/functions/*": {
-        "origins": ["http://localhost:8080", "http://localhost:3000"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    },
-    r"/api/*": {
-        "origins": ["https://cvision-dev.vercel.app", "http://localhost:8080", "http://localhost:3000"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+    r"/*": {
+        "origins": ["*"],
+        "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
     }
 })
 
