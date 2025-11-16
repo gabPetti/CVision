@@ -1,5 +1,0 @@
-flask==3.0.0
-functions-framework==3.5.0
-reportlab==4.0.9
-weasyprint==60.1
-Pillow==10.1.0
