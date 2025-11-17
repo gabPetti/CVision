@@ -22,13 +22,13 @@ def generate_cv(pages: str, tips: str, llm: ChatGoogleGenerativeAI) -> str:
                                                       
     No head, coloque esse estilo:
     <style>
-        @page {
+        @page {{
             margin: 0;
-        }
-        body {
+        }}
+        body {{
             margin: 0;
             padding: 0;
-        }
+        }}
     </style>
 
     **Currículo do Candidato:**
