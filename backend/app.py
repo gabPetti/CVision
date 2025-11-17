@@ -158,8 +158,8 @@ def gerar_cv_otimizado():
         )
 
 
-if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.logger.info(f"🚀 Iniciando CVision Backend na porta {port}")
+# if __name__ == '__main__':
+#     port = int(os.getenv('PORT', 5000))
+#     app.logger.info(f"🚀 Iniciando CVision Backend na porta {port}")
 
-    app.run(port=port, debug=True)
+#     app.run(host="0.0.0.0", port=port, debug=True)

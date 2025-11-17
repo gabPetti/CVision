@@ -26,6 +26,7 @@ werkzeug>=2.3.0
 
 # HTTP Client
 requests>=2.31.0
+gunicorn
 
 # Development (optional)
 # pytest>=7.4.0
