@@ -19,6 +19,17 @@ def generate_cv(pages: str, tips: str, llm: ChatGoogleGenerativeAI) -> str:
     Certifique-se de que o HTML seja bem-estruturado, e replique exatamente o estilo do currículo e inclua todas as seções relevantes do currículo. Priorize a clareza e a facilidade de leitura.
 
     A estilização do HTML deve ser feita inline nos elementos. Utilize flex box ou grid se necessário para garantir que o estilo do cv original seja replicado da forma mais fiel.
+                                                      
+    No head, coloque esse estilo:
+    <style>
+        @page {
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 
     **Currículo do Candidato:**
     {cv}
