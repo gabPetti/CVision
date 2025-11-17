@@ -130,6 +130,7 @@ def analisar_cv():
 def gerar_cv_otimizado():
     """
     Gera um currículo otimizado baseado na análise.
+    Streams the PDF directly to avoid memory issues with large files.
     """
     file = request.files.get('file', None)
     cv_analisys = request.form.get('cv_analisys', None)
@@ -143,21 +144,32 @@ def gerar_cv_otimizado():
         llm_provider = LLMProvider()
         llm = llm_provider.get_llm()
 
-        response = generate_cv(pages, cv_analisys, llm)
+        pdf_path = generate_cv(pages, cv_analisys, llm)
 
-        logger.info("CV analisado com sucesso")
+        logger.info("CV otimizado gerado com sucesso")
 
-        # Convert the PDF file to base64
-        with open(response, 'rb') as pdf_file:
-            pdf_base64 = base64.b64encode(pdf_file.read()).decode('utf-8')
-        
-        # Return JSON with base64 encoded PDF
-        return ResponseBuilder.success(
-            data={
-                "pdf_base64": pdf_base64,
-                "filename": "cv_otimizado.pdf"
+        # Stream the PDF directly instead of converting to base64
+        def generate_pdf_stream():
+            with open(pdf_path, 'rb') as pdf_file:
+                # Read in chunks to avoid memory issues
+                chunk_size = 8192  # 8KB chunks
+                while True:
+                    chunk = pdf_file.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+
+        response = app.response_class(
+            response=generate_pdf_stream(),
+            status=200,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': 'attachment; filename="cv_otimizado.pdf"',
+                'Content-Type': 'application/pdf',
             }
         )
+        
+        return response
     
     except Exception as e:
         logger.error(f"Erro ao gerar CV otimizado: {e}")
