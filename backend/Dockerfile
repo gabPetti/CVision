@@ -37,4 +37,4 @@ ENV PORT=5000
 RUN python3 -c "import flask; import langchain_core; import langchain_google_genai; import langchain_community; import PyPDF2; import docx; print('✓ All dependencies imported successfully')"
 
 # Run the application (using python3 -m app as in start.sh)
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "--timeout", "120", "app:app"]
