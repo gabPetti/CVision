@@ -34,15 +34,24 @@ app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 app.config['JSON_SORT_KEYS'] = False
 
-# Enable CORS
-CORS(app, resources={
-    r"/*": {
-        "origins": ["*"],
-        "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": True
-    }
-})
+# Enable CORS with explicit configuration
+CORS(app, 
+     origins=["*"],
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+     supports_credentials=False,
+     expose_headers=["Content-Type"]
+)
+
+# Handle preflight requests explicitly
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = app.make_default_options_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        return response, 200
 
 # ============================================================================
 # ANALIZAR-CV ENDPOINT - Combina summarize_cv + analyze_cv

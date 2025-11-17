@@ -1,15 +1,13 @@
 /**
  * API client for frontend to communicate with backend
  */
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://cvision-n5o8.onrender.com";
+const API_BASE_URL = "https://cvision-n5o8.onrender.com";
 
-// Use relative path for development (proxied through Vite to Render), full URL for production
+// Always use the full Render URL directly
 const getApiUrl = (path: string) => {
-  if (import.meta.env.DEV) {
-    return path; // Use proxied path during development (Vite proxy to Render)
-  }
-  return `${API_BASE_URL}${path}`;
+  const fullUrl = `${API_BASE_URL}${path}`;
+  console.log("[CV-API] Requesting:", fullUrl);
+  return fullUrl;
 };
 
 export const cvApi = {
