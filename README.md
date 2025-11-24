@@ -1,63 +1,64 @@
-# Welcome to your Lovable project
+# CVision
 
-## Project info
+[Link pro Colab](https://colab.research.google.com/drive/10maoAsUxla5NejIv17siZg1Yvp5IsW0X?usp=sharing)
 
-**URL**: https://colab.research.google.com/drive/10maoAsUxla5NejIv17siZg1Yvp5IsW0X?usp=sharing
+## 🚀 Visão Geral
 
-## How can I edit this code?
+O CVision é uma ferramenta de PLN que atua como um consultor de RH digital. Em vez de uma análise de currículo genérica, este projeto foca em resolver um problema do mundo real que toda pessoa que já entrou no mercado de trabalho já se perguntou: "Meu currículo está bom para esta vaga?"
 
-There are several ways of editing your application.
+O usuário fornece dois inputs de texto:
+- O Currículo (CV).
+- O texto completo da Descrição da Vaga (ex: copiado do LinkedIn, Vagas.com).
 
-**Use your preferred IDE**
+A ferramenta, então, gera uma análise de aderência (Gap Analysis) tática, informando os pontos fortes, as lacunas (o que falta) e sugestões estratégicas para o candidato se destacar. Além disso, o CVision pode **gerar um novo currículo otimizado em HTML e exportá-lo para PDF**, incorporando essas sugestões para maximizar as chances do candidato.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ✨ Features
+- **Gap Analysis**: Compara o CV do usuário com os requisitos da vaga.
+- **Extração de Requisitos**: Identifica e extrai automaticamente as hard skills e soft skills mais importantes da descrição da vaga.
+- **Relatório Tático**: Gera um relatório simples em markdown com:
+  - Pontos Fortes: Onde o seu CV brilha para esta vaga.
+  - Pontos de Melhoria: Quais requisitos da vaga não estão claros no seu CV.
+  - Sugestão Estratégica: Uma dica de ouro para destacar na sua carta de apresentação ou entrevista.
+- **Geração de CV Otimizado**: Cria um currículo em formato HTML, incorporando as informações existentes e as sugestões estratégicas para melhor adequação à vaga.
+- **Exportação para PDF**: Converte o currículo HTML otimizado em um arquivo PDF para fácil compartilhamento e impressão.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠️ Arquitetura e Uso Criativo do LangChain
 
-Follow these steps:
+Aqui está o núcleo do projeto, utilizando o LangChain e múltiplas técnicas de PLN para alcançar as features descritas acima.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Em vez de um prompt único, o projeto usa a LCEL (LangChain Expression Language) para orquestrar um pipeline de duas etapas que simula o raciocínio de um recrutador. A pipeline consiste na utilização das tecnicas de Extração de Entidades encadeado de Sumarização Comparativa.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Cadeia 1: Extração de Requisitos
+- Input: O `texto_vaga`.
+- Processo: O texto passa por um `PromptTemplate` que instrui o LLM a atuar como um "Tech Recruiter".
+- Técnica: O LLM (Gemini) extrai as skills essenciais.
+- Output: Um `JsonOutputParser` força o LLM a retornar um JSON estruturado com as `hard_skills` e `soft_skills`.
 
-# Step 3: Install the necessary dependencies.
-npm i
+Cadeia 2: Análise de Aderência
+- Input: O texto_cv do usuário + o JSON gerado pela Cadeia 1.
+- Processo: Um PromptTemplate instrui o LLM a atuar como "Consultor de Carreira".
+- Técnica: O LLM (Gemini) recebe ambos os inputs e deve comparar os dois, gerando a análise de aderência (gap analysis).
+- Output: Um `StrOutputParser` retorna o relatório final em texto (Markdown).
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Cadeia 3: Geração de Currículo Otimizado
+- Input: O `cv_resumido` e o `resultado` da análise de aderência.
+- Processo: Um PromptTemplate instrui o LLM a atuar como "Gerador de CV em HTML", utilizando as informações fornecidas e as sugestões estratégicas para criar um HTML bem estruturado.
+- Técnica: O LLM (Gemini) gera o código HTML completo do currículo.
+- Output: Um `StrOutputParser` retorna o código HTML.
 
-**Edit a file directly in GitHub**
+O RunnablePassthrough do LangChain é usado para gerenciar e rotear esses múltiplos inputs (CV, Vaga) através do pipeline de forma eficiente.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## ✅ Atendimento aos Critérios de Avaliação
+- Uso do LangChain: Uso da LCEL para orquestrar um pipeline sequencial, gerenciar múltiplos inputs e usar parsers.
+- Uso de um LLM: Uso do Gemini 2.5 Flash para ambas as etapas de PLN.
+- Uso de Página Web (Corpus): O corpus é o texto de uma vaga de emprego real (ex: LinkedIn, Vagas.com), um dado não-estruturado do "mundo real" que o usuário fornece.
+- Github: O projeto está disponível [link-para-seu-github-aqui].
+- Criatividade: A criatividade reside na arquitetura de duas etapas, que simula o raciocínio de um recrutador (primeiro entende a vaga, depois analisa o CV), ao invés de usar um prompt único e simplista. Este projeto exala criatividade e inovação
 
-**Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🔧 Tecnologias Utilizadas
+- Linguagem: Python
+- Plataforma: Google Colab
+- Framework: LangChain (LCEL, langchain-google-genai, langchain-core)
+- LLM: Google Gemini 2.5 Flash
+- Conversão HTML para PDF: WeasyPrint
