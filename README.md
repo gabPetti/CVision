@@ -1,6 +1,6 @@
 # CVision
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/10maoAsUxla5NejIv17siZg1Yvp5IsW0X?usp=sharing]
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/10maoAsUxla5NejIv17siZg1Yvp5IsW0X?usp=sharing)]
 
 ## 🚀 Visão Geral
 
