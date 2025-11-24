@@ -4,7 +4,7 @@
 
 ## Exemplos
 
-[Drive dos exemplos](https://drive.google.com/drive/u/0/folders/1CrYFyZwVcB_vZQaSPMP_WadL7jzu8Xv9)
+[Drive dos exemplos](https://drive.google.com/drive/folders/1CrYFyZwVcB_vZQaSPMP_WadL7jzu8Xv9?usp=sharing)
 
 ## 🚀 Visão Geral
 
