@@ -14,20 +14,24 @@ logger = logging.getLogger(__name__)
 
 def generate_cv(pages: str, tips: str, llm: ChatGoogleGenerativeAI) -> str:
     prompt_html_cv = ChatPromptTemplate.from_template("""
-    Você é um 'Consultor de Carreira'. Sua tarefa é gerar um currículo profissional em formato HTML, incorporando as informações do currículo e aplicando as sugestões estratégicas para otimizá-lo para a vaga.
+    Você é um 'Consultor de Carreira'. Sua tarefa é gerar um currículo profissional em formato HTML na lingua utilizada no CV original, incorporando as informações do currículo e aplicando as sugestões estratégicas para otimizá-lo para a vaga.
+    Certifique-se de que o HTML seja bem-estruturado, e inclua todas as seções relevantes do currículo. Priorize a clareza e a facilidade de leitura.
+    A quebra de pagina deve ter um espaçamento bom para que o texto seja legivel. Não use fontes e divisões complexas.
+    A estilização do HTML deve ser feita inline nos elementos. Deixe o design compacto, elegante, estiloso e condense o conteudo em 1 (uma) página inteira, considerando que o HTML gerado será convertido em PDF de uma folha A4, então estilize o conteudo considerando no tamanho do body.
 
-    Certifique-se de que o HTML seja bem-estruturado, e replique exatamente o estilo do currículo e inclua todas as seções relevantes do currículo. Priorize a clareza e a facilidade de leitura.
-
-    A estilização do HTML deve ser feita inline nos elementos. Utilize flex box ou grid se necessário para garantir que o estilo do cv original seja replicado da forma mais fiel.
-                                                      
     No head, coloque esse estilo:
     <style>
-        @page {{
-            margin: 0;
-        }}
-        body {{
+        * {{
             margin: 0;
             padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }}
+        @page {{
+            size: A4;
+            margin: 1cm 0;
         }}
     </style>
 
