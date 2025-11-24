@@ -24,6 +24,8 @@ def analyze_cv(pages, link_vaga: str, llm: ChatGoogleGenerativeAI) -> dict:
     - **Pontos de Melhoria**: Quais requisitos da vaga faltam no CV.
     - **Sugestão Estratégica**: Uma dica de ouro para o CV.
                                                       
+    Quando fizer os pontos, use <b></b> para destacar os títulos, não use asteriscos duplos.
+                                                      
     Responda em json com a seguinte estrutura:
     {{
         "pontos_fortes": [...],
