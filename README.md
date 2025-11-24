@@ -2,6 +2,10 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/10maoAsUxla5NejIv17siZg1Yvp5IsW0X?usp=sharing)
 
+## Exemplos
+
+[Drive dos exemplos](https://drive.google.com/drive/u/0/folders/1CrYFyZwVcB_vZQaSPMP_WadL7jzu8Xv9)
+
 ## 🚀 Visão Geral
 
 O CVision é uma ferramenta de PLN que atua como um consultor de RH digital. Em vez de uma análise de currículo genérica, este projeto foca em resolver um problema do mundo real que toda pessoa que já entrou no mercado de trabalho já se perguntou: "Meu currículo está bom para esta vaga?"
